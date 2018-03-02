@@ -5,9 +5,10 @@
 Here is the game "Aidez McGyver à s'échapper"
 """
 
+import sys
+import random
 import pygame
 from pygame.locals import*
-import random
 
 ### CONSTANTS ###
 
@@ -35,12 +36,15 @@ KEEPER = 'images/gardien.png'
 NEEDLE = 'images/needle0.png'
 BLOWGUN = 'images/blowgun1.png'
 ETHER = 'images/brilliant_blue.png'
-INVENTORY ='images/unseen.png'
 SLOT = 'images/slot.png'
 
+#messages for starting and ending screens
+START = "Aidez McGyver à s'échapper"
+INSTRUCT = "Ramassez les objets pour vous débarasser du gardien"
+WIN = "McGyver s'est échappé"
+LOSS = "McGyver s'est fait attraper"
 
-
-### CLASSES ###
+### CLASSES & FUNCTIONS###
 
 class Level():
     """Level creation"""
@@ -63,7 +67,7 @@ class Level():
 
 
     def draw(self, screen):
-        """draw the loaded level on screen"""
+        """Draws the loaded level on screen"""
 
         n_line = 0
         for line in self.frame:
@@ -75,8 +79,6 @@ class Level():
                     screen.blit(pygame.image.load(WALL).convert(), (x,y)) #draw wall tile on screen
                 elif sprite == '_': #check for floor character
                     screen.blit(pygame.image.load(FLOOR).convert(), (x,y)) #draw floor tile on screen
-                elif sprite == 'U': #check for inventory character
-                    screen.blit(pygame.image.load(INVENTORY).convert(), (x,y)) #draw inventory tile on screen
                 elif sprite == 'I': #check for slot character
                     screen.blit(pygame.image.load(SLOT).convert(), (x,y)) #draw slot tile on screen
                 n_tile += 1
@@ -98,64 +100,65 @@ class Sprite():
         sprite_instances.append(self) #add instance to the sprite_instances list for further drawing
 
 
-    def move(self, direction):
-        """move sprite"""
-        #check keyboard input
-        if direction == 'right':
-            #check level limit
-            if self.tile_x < (XTILES - 1):
-                #check for wall
-                if self.level.frame[self.tile_y][self.tile_x + 1] != 'X':
-                    #check for inventory tiles
-                    if self.level.frame[self.tile_y][self.tile_x + 1] != 'I':
-                        #set new position on grid
-                        self.tile_x += 1
-                        #set new position on screen
-                        self.x = self.tile_x * TILESIZE
+    def move(self, key):
+        """Changes position of sprite on grid and screen from keyboard input 'key'"""
         
-        #check keyboard input
-        elif direction == 'left':
-            #check level limit
+        #Checks if input is left and changes sprite positions
+        if key == 'left':
+            #Checks level limit
             if self.tile_x > 0:
-                #check for wall
+                #Checks for wall
                 if self.level.frame[self.tile_y][self.tile_x - 1] != 'X':
                     #check for inventory tiles
                     if self.level.frame[self.tile_y][self.tile_x - 1] != 'I':
-                        #set new position on grid   
+                        #Sets new position on grid  
                         self.tile_x -= 1
-                        #set new position on screen
+                        #Sets new position on screen
+                        self.x = self.tile_x * TILESIZE
+
+        #Checks if input is right and changes sprite positions
+        elif key == 'right':
+            #Checks level limits
+            if self.tile_x < (XTILES - 1):
+                #Checks for wall
+                if self.level.frame[self.tile_y][self.tile_x + 1] != 'X':
+                    #Checks for inventory tiles
+                    if self.level.frame[self.tile_y][self.tile_x + 1] != 'I':
+                        #set new position on grid
+                        self.tile_x += 1
+                        #Sets new position on screen
                         self.x = self.tile_x * TILESIZE
         
-        #check keyboard input
-        elif direction == 'up':
-            #check level limit
+        #Checks if input is up and changes sprite positions
+        elif key == 'up':
+            #Checks level limits
             if self.tile_y > 0:
-                #check for wall
+                #Checks for wall
                 if self.level.frame[self.tile_y-1][self.tile_x] != 'X':
-                    #check for inventory tiles
+                    #Checks for inventory tiles
                     if self.level.frame[self.tile_y-1][self.tile_x] != 'I':
-                        #set new position on grid 
+                        #Sets new position on grid 
                         self.tile_y -= 1
-                        #set new position on screen
+                        #Sets new position on screen
                         self.y = self.tile_y * TILESIZE
 
-        #check keyboard input
-        elif direction == 'down':
-            #check level limit
+        #Checks if input is down and changes sprite positions
+        elif key == 'down':
+            #check level limits
             if self.tile_y < (YTILES - 1):
                 #check for wall
                 if self.level.frame[self.tile_y+1][self.tile_x] != 'X':
                     #check for inventory tiles
                     if self.level.frame[self.tile_y+1][self.tile_x] != 'I':
-                        #set new position on grid 
+                        #Sets new position on grid
                         self.tile_y += 1
-                        #set new position on screen
+                        #Sets new position on screen
                         self.y = self.tile_y * TILESIZE
     
 
     def spawn(self, tile_y, tile_x):
-        """spawn a sprite and put an 'O' symbol in level to prevent spawning other sprites
-        on the same tile, could be used later to spawn additional sprites from events"""
+        """Spawns a sprite and put an 'O' symbol in level to prevent spawning other sprites
+            on the same tile, could be used later to spawn additional sprites from events"""
         self.tile_y = tile_y #y position on grid
         self.tile_x = tile_x #x position on grid
         self.level.frame[self.tile_y][self.tile_x] == 'O' #token for presence of spawned sprite
@@ -163,7 +166,7 @@ class Sprite():
         self.x = self.tile_x * TILESIZE #x position on screen
 
     def rdm_spawn(self):
-        """randomely spawn sprite avoiding walls 'X' and other spawned sprites 'O'"""
+        """Randomely spawns sprite avoiding walls 'X' and other spawned sprites 'O'"""
 
         spawned = False #sprite hasn't spawned
         while not spawned:
@@ -185,7 +188,7 @@ class Sprite():
                     spawned = True #ends loop
 
     def pickup(self, slot_x):
-        """Transfer item to chosen inventory slot"""
+        """Transfers item to chosen inventory slot"""
         player_inventory[self.name] += 1 #add item to inventory
         self.tile_y = 15 #last row reserved for inventory
         self.tile_x = slot_x #chosen inventory slot
@@ -194,11 +197,27 @@ class Sprite():
 
 
     def draw(self):
-        """draw sprite on screen"""
+        """Draws sprite on screen"""
         screen.blit(self.image, (self.x, self.y))
 
 
+def message(event, color):
+    """starting and ending screens messages"""
 
+    #fill whole screen with solid black color
+    screen.fill(BLACK)
+
+    #print ending message on the middle of screen
+    text = font.render(event, True, color)
+    screen.blit(text,(SCREENWIDTH // 2 - text.get_width() // 2, SCREENHEIGHT // 2 - text.get_height() // 2))
+
+    #update display
+    pygame.display.flip()
+
+    #pause program for 1.5 sec (user can't QUIT)
+    pygame.time.wait(1500)
+
+ 
 ### MAIN ###
 
 #initialize all imported pygame modules
@@ -213,36 +232,16 @@ pygame.display.set_caption(TITLE)
 #initialize font
 font = pygame.font.SysFont("bookman", 24)
 
-#messages for starting and ending screens
-START = font.render("Aidez McGyver à s'échapper", True, BLUE)
-INSTRUCT = font.render("Ramassez les objets pour vous débarasser du gardien", True, BLUE)
-WIN = font.render("McGyver s'est échappé", True, GREEN)
-LOSS = font.render("McGyver s'est fait attraper", True, RED)
-
-#starting screen
-#fill whole screen with solid black color
-screen.fill(BLACK)
-
-#prints game title in middle of screen
-screen.blit(START,(SCREENWIDTH // 2 - START.get_width() // 2, SCREENHEIGHT // 2 - START.get_height() // 2))
-#prints instructions on middle bottom of screen
-screen.blit(INSTRUCT,(SCREENWIDTH // 2 - INSTRUCT.get_width() // 2, SCREENHEIGHT - INSTRUCT.get_height()))
-
-#update display
-pygame.display.flip()
-
-#pause program for 3 seconds (user can't QUIT)
-pygame.time.wait(3000)
-
-#main loop condition
-running = True
+#starting screens
+message(START, BLUE) #title
+message(INSTRUCT, BLUE) #basic instructions
 
 #load level from file then draws it on screen without sprites
 new_level = Level()
 new_level.load()
 new_level.draw(screen)
 
-#create player inventory
+#creates player inventory
 player_inventory = {"needle":0,"blowgun":0,"ether":0}
 
 #creation of items and characters
@@ -271,22 +270,24 @@ for i in items:
     i.rdm_spawn()
 
 #main loop
+running = True
+
 while running:
 
-    #limit updates to 10 per second
+    #Limits updates to 10 per second
     pygame.time.Clock().tick(10)
 
-    #draws level on screen
+    #Draws level on screen
     new_level.draw(screen)
 
-    #draw all sprites
+    #Draws all sprites
     for sprite in sprite_instances:
-       sprite.draw()
+        sprite.draw()
 
-    #update display
+    #Updates display
     pygame.display.flip()
 
-    #listen keyboard inputs
+    #Listens keyboard inputs
     for event in pygame.event.get():
         if event.type == QUIT or event.type == KEYDOWN and event.key == K_ESCAPE:
             running = False #quit game if player clicks on close windows icon or press escape key
@@ -300,54 +301,33 @@ while running:
             elif event.key == K_RIGHT:
                 player.move('right') #move player sprite right if right arrow key is pressed
        
-    #check if player and item locations match, transfer item to chosen inventory slot
-    #check for needle item
+    #Checks if player and item locations match, transfer item to chosen inventory slot
+    #Checks for needle item
     if (player.tile_x, player.tile_y) == (needle.tile_x, needle.tile_y):
         needle.pickup(6)
     
-    #check for blowgun item
+    #Checks for blowgun item
     elif (player.tile_x, player.tile_y) == (blowgun.tile_x, blowgun.tile_y):
         blowgun.pickup(7)
        
-    #check for ether item
+    #Checks for ether item
     elif (player.tile_x, player.tile_y) == (ether.tile_x, ether.tile_y):
         ether.pickup(8)
         
-    #checks for victory condition and draws ending screen
-    #check if player and keeper locations match
+    #Checks for victory condition and draws ending screen
+    #Checks if player and keeper locations match
     if (player.tile_x, player.tile_y) == (keeper.tile_x, keeper.tile_y):
-        #check if the player inventory has the required items to anaesthetise the keeper
+        #Checks if the player inventory has the required items to anaesthetise the keeper
         if player_inventory == {"needle":1,"blowgun":1,"ether":1}:
 
-            #fill whole screen with solid black color
-            screen.fill(BLACK)
-
-            #print ending message on the middle of screen
-            screen.blit(WIN,(SCREENWIDTH // 2 - WIN.get_width() // 2, SCREENHEIGHT // 2 - WIN.get_height() // 2))
-
-            #update display
-            pygame.display.flip()
-
-            #pause program for 3 sec (user can't QUIT)
-            pygame.time.wait(3000)
-
-            #ends the game
+            message(WIN, GREEN)# draws victory screen
             running = False
+            pygame.quit()
+            sys.exit("Merci d'avoir essayé mon jeu")
 
         else:
 
-            #fill whole screen with solid black color
-            screen.fill(BLACK)
-
-            #print ending message on the middle of screen
-            screen.blit(LOSS,(SCREENWIDTH // 2 - LOSS.get_width() // 2, SCREENHEIGHT // 2 - LOSS.get_height() // 2))
-
-            #update display
-            pygame.display.flip()
-
-            #pause program for 3 sec (user can't QUIT)
-            pygame.time.wait(3000)
-
-            #ends the game
+            message(LOSS, RED)# draws failure screen
             running = False
-
+            pygame.quit()
+            sys.exit("Vous ferez mieux la prochaine fois.")
